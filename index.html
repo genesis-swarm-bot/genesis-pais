@@ -1,0 +1,10 @@
+<!DOCTYPE html><html><head><title>Genesis Swarm</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>body{background:#0f172a;color:#e2e8f0;font-family:Arial;padding:20px}h1{color:#38bdf8}.card{border:1px solid #334155;padding:10px;margin:5px 0;border-radius:8px}</style></head><body>
+    <h1>Genesis AI Swarm</h1><div id="stats">Loading...</div><div id="log"></div>
+    <script>const sb=supabase.createClient("https://jbrcxkrudgwhmqxqtjen.supabase.co","sb_publishable_LP9aT6_4n7Q3GN_tIXb1vQ_YyV3H1tI");
+    async function load(){const{data,error}=await sb.from('earnings').select('*').order('timestamp',{ascending:false}).limit(20);
+    if(error){document.getElementById('stats').innerText='Error';return;}
+    document.getElementById('stats').innerHTML='<p>Total earnings events: '+data.length+'</p>';
+    let h='';data.forEach(e=>{h+='<div class="card"><strong>'+e.source+'</strong> - '+e.title+'<br><small>'+new Date(e.timestamp).toLocaleString()+'</small></div>'});
+    document.getElementById('log').innerHTML=h;}load();setInterval(load,60000);</script></body></html>
