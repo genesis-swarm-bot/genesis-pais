@@ -1,0 +1,9 @@
+requests
+beautifulsoup4
+python-dotenv
+supabase
+playwright
+Pillow
+huggingface_hub
+gitpython
+beem
