@@ -2,7 +2,7 @@ import os, json, time, requests, sys
 from beem import Steem
 
 STEEM_USER = os.getenv("STEEMIT_USERNAME")
-STEEM_KEY = os.getenv("STEEMIT_ACTIVE_KEY")
+STEEM_POSTING_KEY = os.getenv("STEEMIT_POSTING_KEY")
 NC_WALLET = os.getenv("NC_WALLET_ETH", "0x7c193f13c99f8e420693af5eae0d1a7fdc2a4419")
 
 def generate_article(topic):
@@ -18,15 +18,15 @@ def generate_article(topic):
     return f"{topic} is changing the crypto landscape. Learn how and why it matters in our latest post."
 
 def post(title, body, tags):
-    if not STEEM_KEY:
-        print("ERROR: STEEMIT_ACTIVE_KEY is empty. Check the GitHub secret.")
+    if not STEEM_POSTING_KEY:
+        print("ERROR: STEEMIT_POSTING_KEY is missing or empty.")
         sys.exit(1)
-    steem = Steem(keys=[STEEM_KEY])
+    steem = Steem(keys=[STEEM_POSTING_KEY])
     steem.post(title, body, author=STEEM_USER, tags=tags)
 
 def main():
-    if not STEEM_USER or not STEEM_KEY:
-        print("Missing STEEMIT_USERNAME or STEEMIT_ACTIVE_KEY – skipping post.")
+    if not STEEM_USER or not STEEM_POSTING_KEY:
+        print("Missing STEEMIT_USERNAME or STEEMIT_POSTING_KEY – skipping post.")
         return
 
     try:
