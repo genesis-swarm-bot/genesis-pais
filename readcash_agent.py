@@ -3,6 +3,27 @@ from playwright.sync_api import sync_playwright
 
 BCH_ADDR = os.getenv("BCH_ADDRESS", "qrhzhln53tyz4xn76suj4n52yqnw785ys5kvsav7va")
 
+def sanitize_cookies(raw_cookies):
+    valid_same_site = {"Strict", "Lax", "None"}
+    cleaned = []
+    for c in raw_cookies:
+        new_c = {
+            "name": c.get("name", ""),
+            "value": c.get("value", ""),
+            "domain": c.get("domain", ""),
+            "path": c.get("path", "/"),
+            "secure": c.get("secure", False),
+            "httpOnly": c.get("httpOnly", False),
+        }
+        same_site = c.get("sameSite", "Lax")
+        if same_site not in valid_same_site:
+            same_site = "Lax"
+        new_c["sameSite"] = same_site
+        if not c.get("session", False) and "expirationDate" in c:
+            new_c["expires"] = float(c["expirationDate"])
+        cleaned.append(new_c)
+    return cleaned
+
 def generate_article(topic):
     try:
         API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
@@ -19,7 +40,7 @@ def post(title, body, cookies):
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(cookies))
+        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
         pg = ctx.new_page()
         pg.goto("https://read.cash/create")
         pg.fill("input[name='title']", title)
@@ -32,7 +53,7 @@ def withdraw(cookies):
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(cookies))
+        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
         pg = ctx.new_page()
         pg.goto("https://read.cash/wallet")
         bal = float(pg.text_content(".balance-amount").replace("$", ""))
