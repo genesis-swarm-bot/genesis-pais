@@ -27,7 +27,7 @@ jobs:
       - name: Steemit
         env:
           STEEMIT_USERNAME: ${{ secrets.STEEMIT_USERNAME }}
-          STEEMIT_ACTIVE_KEY: ${{ secrets.STEEMIT_ACTIVE_KEY }}
+          STEEMIT_POSTING_KEY: ${{ secrets.STEEMIT_POSTING_KEY }}
           NC_WALLET_ETH: ${{ secrets.NC_WALLET_ETH }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python steemit_agent.py
