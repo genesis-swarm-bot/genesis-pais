@@ -1,4 +1,4 @@
-import os, json, time, requests
+import os, json, time, requests, sys
 from beem import Steem
 
 STEEM_USER = os.getenv("STEEMIT_USERNAME")
@@ -18,11 +18,17 @@ def generate_article(topic):
     return f"{topic} is changing the crypto landscape. Learn how and why it matters in our latest post."
 
 def post(title, body, tags):
-    # Pass the active key so beem can sign the transaction
+    if not STEEM_KEY:
+        print("ERROR: STEEMIT_ACTIVE_KEY is empty. Check the GitHub secret.")
+        sys.exit(1)
     steem = Steem(keys=[STEEM_KEY])
     steem.post(title, body, author=STEEM_USER, tags=tags)
 
 def main():
+    if not STEEM_USER or not STEEM_KEY:
+        print("Missing STEEMIT_USERNAME or STEEMIT_ACTIVE_KEY – skipping post.")
+        return
+
     try:
         with open("/tmp/trends.json") as f:
             trends = json.load(f)
@@ -30,8 +36,7 @@ def main():
         trends = ["crypto"]
     topic = trends[0] if trends else "crypto"
     article = generate_article(topic)
-    if STEEM_USER and STEEM_KEY:
-        post(f"How {topic} Works", article, ["crypto", "blog"])
+    post(f"How {topic} Works", article, ["crypto", "blog"])
 
 if __name__ == "__main__":
     main()
