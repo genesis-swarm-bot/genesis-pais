@@ -13,7 +13,6 @@ def generate_article(topic):
             return resp.json()[0]["generated_text"]
     except Exception as e:
         print(f"Hugging Face API error (using fallback): {e}")
-    # Fallback article if API fails
     return f"{topic} continues to make waves in the crypto world. Stay tuned for more insights and updates."
 
 def post(title, body, cookies):
