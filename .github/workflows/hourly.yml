@@ -9,16 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: microsoft/playwright@v1
-        with:
-          browsers: chromium
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
       - name: Install Python packages
         run: pip install -r requirements.txt
+
+      - name: Install Playwright Chromium (with all system deps)
+        run: |
+          playwright install --with-deps chromium
 
       - name: Scanner
         run: python scanner.py
