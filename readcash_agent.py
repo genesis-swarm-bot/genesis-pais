@@ -1,82 +1,55 @@
-import os, json, time, requests
+import os, json, time, random, requests
 from playwright.sync_api import sync_playwright
 
-BCH_ADDR = os.getenv("BCH_ADDRESS", "qrhzhln53tyz4xn76suj4n52yqnw785ys5kvsav7va")
+COOKIES = os.getenv("READCASH_COOKIES")
+BCH_ADDR = os.getenv("BCH_ADDRESS","qrhzhln53tyz4xn76suj4n52yqnw785ys5kvsav7va")
 
-def sanitize_cookies(raw_cookies):
-    valid_same_site = {"Strict", "Lax", "None"}
+def sanitize_cookies(raw):
+    valid = {"Strict","Lax","None"}
     cleaned = []
-    for c in raw_cookies:
-        new_c = {
-            "name": c.get("name", ""),
-            "value": c.get("value", ""),
-            "domain": c.get("domain", ""),
-            "path": c.get("path", "/"),
-            "secure": c.get("secure", False),
-            "httpOnly": c.get("httpOnly", False),
-        }
-        same_site = c.get("sameSite", "Lax")
-        if same_site not in valid_same_site:
-            same_site = "Lax"
-        new_c["sameSite"] = same_site
-        if not c.get("session", False) and "expirationDate" in c:
-            new_c["expires"] = float(c["expirationDate"])
-        cleaned.append(new_c)
+    for c in raw:
+        new = {"name":c.get("name",""),"value":c.get("value",""),"domain":c.get("domain",""),
+               "path":c.get("path","/"),"secure":c.get("secure",False),"httpOnly":c.get("httpOnly",False)}
+        s = c.get("sameSite","Lax")
+        new["sameSite"] = s if s in valid else "Lax"
+        if not c.get("session") and "expirationDate" in c:
+            new["expires"] = float(c["expirationDate"])
+        cleaned.append(new)
     return cleaned
 
-def generate_article(topic):
-    try:
-        API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
-        headers = {"Authorization": f"Bearer {os.getenv('HF_TOKEN', '')}"}
-        prompt = f"Write an article about {topic}"
-        resp = requests.post(API_URL, headers=headers, json={"inputs": prompt}, timeout=30)
-        if resp.status_code == 200:
-            return resp.json()[0]["generated_text"]
-    except Exception as e:
-        print(f"Hugging Face API error (using fallback): {e}")
+def article(topic):
     return f"How {topic} Works: {topic} is a hot topic right now. Here's why it matters."
 
-def post(title, body, cookies):
+def main():
+    if not COOKIES:
+        return
+    cookies = sanitize_cookies(json.loads(COOKIES))
+    trends = ["crypto","Bitcoin","Ethereum"]
+    topic = random.choice(trends)
+    body = article(topic)
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
+        ctx.add_cookies(cookies)
         pg = ctx.new_page()
-        pg.goto("https://read.cash/create")
-        pg.fill("input[name='title']", title)
+        pg.goto("https://read.cash/create", wait_until="domcontentloaded", timeout=60000)
+        pg.wait_for_selector("input[name='title']", timeout=30000)
+        pg.fill("input[name='title']", f"How {topic} Works")
         pg.fill("div.ql-editor", body)
         pg.click("button[type='submit']")
         time.sleep(3)
-        b.close()
-
-def withdraw(cookies):
-    with sync_playwright() as p:
-        b = p.chromium.launch(headless=True)
-        ctx = b.new_context()
-        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
-        pg = ctx.new_page()
+        # Withdraw BCH
         pg.goto("https://read.cash/wallet")
-        bal = float(pg.text_content(".balance-amount").replace("$", ""))
-        if bal > 0.01:
-            pg.click("text=Withdraw")
-            pg.fill("input[name='address']", BCH_ADDR)
-            pg.fill("input[name='amount']", str(bal))
-            pg.click("button:has-text('Send')")
-            time.sleep(3)
+        try:
+            bal = float(pg.text_content(".balance-amount").replace("$",""))
+            if bal > 0.01:
+                pg.click("text=Withdraw")
+                pg.fill("input[name='address']", BCH_ADDR)
+                pg.fill("input[name='amount']", str(bal))
+                pg.click("button:has-text('Send')")
+                time.sleep(3)
+        except: pass
         b.close()
-
-def main():
-    try:
-        with open("/tmp/trends.json") as f:
-            trends = json.load(f)
-    except:
-        trends = ["crypto"]
-    topic = trends[0] if trends else "crypto"
-    article = generate_article(topic)
-    cookies = os.getenv("READCASH_COOKIES")
-    if cookies:
-        post(f"How {topic} Works", article, cookies)
-        withdraw(cookies)
 
 if __name__ == "__main__":
     main()
