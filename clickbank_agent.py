@@ -7,6 +7,27 @@ WP_URL = os.getenv("WORDPRESS_URL")
 WP_COOKIES = os.getenv("WORDPRESS_COOKIES")
 TW_COOKIES = os.getenv("TWITTER_COOKIES")
 
+def sanitize_cookies(raw_cookies):
+    valid_same_site = {"Strict", "Lax", "None"}
+    cleaned = []
+    for c in raw_cookies:
+        new_c = {
+            "name": c.get("name", ""),
+            "value": c.get("value", ""),
+            "domain": c.get("domain", ""),
+            "path": c.get("path", "/"),
+            "secure": c.get("secure", False),
+            "httpOnly": c.get("httpOnly", False),
+        }
+        same_site = c.get("sameSite", "Lax")
+        if same_site not in valid_same_site:
+            same_site = "Lax"
+        new_c["sameSite"] = same_site
+        if not c.get("session", False) and "expirationDate" in c:
+            new_c["expires"] = float(c["expirationDate"])
+        cleaned.append(new_c)
+    return cleaned
+
 def fetch_products():
     r = requests.get("https://www.clickbank.com/feeds/marketplace_feed_v1.xml")
     soup = BeautifulSoup(r.content, "xml")
@@ -25,10 +46,12 @@ def generate_review(name, aff_link):
     return f"Check out {name} – it's a great product! {aff_link}"
 
 def post_blog(title, content):
+    if not WP_COOKIES:
+        return
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(WP_COOKIES))
+        ctx.add_cookies(sanitize_cookies(json.loads(WP_COOKIES)))
         pg = ctx.new_page()
         pg.goto(f"{WP_URL}/wp-admin/post-new.php")
         pg.fill("textarea#title", title)
@@ -43,7 +66,7 @@ def tweet(content):
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(TW_COOKIES))
+        ctx.add_cookies(sanitize_cookies(json.loads(TW_COOKIES)))
         pg = ctx.new_page()
         pg.goto("https://twitter.com/compose/tweet")
         pg.fill("div[data-testid='tweetTextarea_0']", content[:280])
