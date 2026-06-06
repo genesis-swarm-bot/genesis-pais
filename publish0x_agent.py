@@ -3,6 +3,17 @@ from playwright.sync_api import sync_playwright
 
 NC_WALLET = os.getenv("NC_WALLET_ETH", "0x7c193f13c99f8e420693af5eae0d1a7fdc2a4419")
 
+def sanitize_cookies(raw_cookies):
+    """Convert EditThisCookie export to Playwright-safe cookies."""
+    valid_same_site = {"Strict", "Lax", "None"}
+    cleaned = []
+    for c in raw_cookies:
+        c = {k: v for k, v in c.items() if k in ["name", "value", "url", "domain", "path", "secure", "httpOnly", "sameSite", "expires"]}
+        if "sameSite" in c and c["sameSite"] not in valid_same_site:
+            c["sameSite"] = "Lax"
+        cleaned.append(c)
+    return cleaned
+
 def generate_article(topic):
     try:
         API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
@@ -19,7 +30,8 @@ def post(title, body, cookies):
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(cookies))
+        # Sanitize cookies before adding
+        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
         pg = ctx.new_page()
         pg.goto("https://www.publish0x.com/new")
         pg.fill("input[name='title']", title)
@@ -32,7 +44,7 @@ def withdraw(cookies):
     with sync_playwright() as p:
         b = p.chromium.launch(headless=True)
         ctx = b.new_context()
-        ctx.add_cookies(json.loads(cookies))
+        ctx.add_cookies(sanitize_cookies(json.loads(cookies)))
         pg = ctx.new_page()
         pg.goto("https://www.publish0x.com/account/wallet")
         bal = pg.text_content(".wallet-balance")
