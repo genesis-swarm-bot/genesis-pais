@@ -1,4 +1,4 @@
-name: Genesis Swarm
+name: Genesis Swarm (API agents)
 on:
   schedule:
     - cron: '0 * * * *'
@@ -8,27 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
       - name: Install Python packages
         run: pip install -r requirements.txt
 
-      - name: Install Playwright Chromium (with all system deps)
-        run: |
-          playwright install --with-deps chromium
-
       - name: Scanner
         run: python scanner.py
-
-      - name: Publish0x
-        env:
-          PUBLISH0X_COOKIES: ${{ secrets.PUBLISH0X_COOKIES }}
-          NC_WALLET_ETH: ${{ secrets.NC_WALLET_ETH }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python publish0x_agent.py
 
       - name: Hive Swap
         env:
@@ -36,47 +23,6 @@ jobs:
           HIVE_ACTIVE_KEY: ${{ secrets.HIVE_ACTIVE_KEY }}
           NC_WALLET_ETH: ${{ secrets.NC_WALLET_ETH }}
         run: python hive_agent.py
-
-      - name: ReadCash
-        env:
-          READCASH_COOKIES: ${{ secrets.READCASH_COOKIES }}
-          BCH_ADDRESS: ${{ secrets.BCH_ADDRESS }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python readcash_agent.py
-
-      - name: Redbubble
-        env:
-          REDBUBBLE_COOKIES: ${{ secrets.REDBUBBLE_COOKIES }}
-        run: python redbubble_agent.py
-
-      - name: Gumroad
-        env:
-          GUMROAD_COOKIES: ${{ secrets.GUMROAD_COOKIES }}
-        run: python gumroad_agent.py
-
-      - name: ClickBank
-        env:
-          CLICKBANK_NICKNAME: ${{ secrets.CLICKBANK_NICKNAME }}
-          WORDPRESS_URL: ${{ secrets.WORDPRESS_URL }}
-          WORDPRESS_COOKIES: ${{ secrets.WORDPRESS_COOKIES }}
-          TWITTER_COOKIES: ${{ secrets.TWITTER_COOKIES }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: python clickbank_agent.py
-
-      - name: Digistore24
-        env:
-          DIGISTORE24_ID: ${{ secrets.DIGISTORE24_ID }}
-        run: python digistore24_agent.py
-
-      - name: Ko-fi
-        env:
-          KOFI_PAGE_URL: ${{ secrets.KOFI_PAGE_URL }}
-        run: python kofi_agent.py
-
-      - name: eBay
-        env:
-          EBAY_COOKIES: ${{ secrets.EBAY_COOKIES }}
-        run: python ebay_agent.py
 
       - name: Steemit
         env:
