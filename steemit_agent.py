@@ -1,8 +1,5 @@
 import os, json, time, requests
 from beem import Steem
-from beem.account import Account
-from beem.transactionbuilder import TransactionBuilder
-from beembase import operations
 
 STEEM_USER = os.getenv("STEEMIT_USERNAME")
 STEEM_KEY = os.getenv("STEEMIT_ACTIVE_KEY")
@@ -21,12 +18,9 @@ def generate_article(topic):
     return f"{topic} is changing the crypto landscape. Learn how and why it matters in our latest post."
 
 def post(title, body, tags):
+    # Pass the active key so beem can sign the transaction
     steem = Steem(keys=[STEEM_KEY])
     steem.post(title, body, author=STEEM_USER, tags=tags)
-
-def swap_steem_to_eth():
-    # optional – can be expanded later
-    pass
 
 def main():
     try:
