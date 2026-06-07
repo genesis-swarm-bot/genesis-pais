@@ -170,7 +170,7 @@
     </header>
 
     <div class="content" id="pageContent">
-      <!-- Dynamic content loaded by JS -->
+      <!-- Dashboard will be rendered here -->
     </div>
   </div>
 
@@ -257,13 +257,15 @@
     updateGreeting();
 
     // ---------- NAVIGATION ----------
+    function navigateTo(page) {
+      currentPage = page;
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      document.querySelector(`[data-page="${page}"]`).classList.add('active');
+      renderPage();
+    }
+
     document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelector('.nav-item.active').classList.remove('active');
-        item.classList.add('active');
-        currentPage = item.dataset.page;
-        renderPage();
-      });
+      item.addEventListener('click', () => navigateTo(item.dataset.page));
     });
 
     // ---------- MODAL HELPERS ----------
@@ -325,22 +327,24 @@
     async function loadDashboardData() {
       const { data, error } = await sb.from('earnings').select('*').order('timestamp', { ascending: false });
       if (!error) allEvents = data;
-      if (currentPage === 'dashboard') renderDashboard();
+      renderPage(); // Always re-render the current page
     }
 
     // ---------- RENDER PAGE ----------
     function renderPage() {
       const content = document.getElementById('pageContent');
       if (currentPage === 'dashboard') {
-        renderDashboard();
+        renderDashboard(content);
       } else {
-        content.innerHTML = `<div class="card" style="text-align:center; padding:80px;"><h2>${currentPage.charAt(0).toUpperCase()+currentPage.slice(1)}</h2><p style="color:#94A3B8">This section is under development.</p></div>`;
+        content.innerHTML = `<div class="card" style="text-align:center; padding:80px;">
+          <h2>${currentPage.charAt(0).toUpperCase()+currentPage.slice(1)}</h2>
+          <p style="color:#94A3B8">This section will be available soon.</p>
+        </div>`;
       }
     }
 
-    // ---------- DASHBOARD ----------
-    function renderDashboard() {
-      const content = document.getElementById('pageContent');
+    // ---------- DASHBOARD RENDERING ----------
+    function renderDashboard(container) {
       const events = allEvents || [];
       const sources = [...new Set(events.map(e => e.source))];
       const total = events.length;
@@ -362,10 +366,8 @@
         </div>`;
 
       // Tasks table with tabs
-      let taskTab = 'All';
-      let filtered = events;
       const taskTabs = ['All', 'Running', 'Completed', 'Pending', 'Failed'];
-      const taskRows = filtered.slice(0, 8).map(e => {
+      const taskRows = events.slice(0, 8).map(e => {
         let status = 'completed';
         if (e.source.includes('steemit') || e.source.includes('hive')) status = 'running';
         return `<tr>
@@ -409,15 +411,15 @@
       const funnelHtml = funnelStages.map((s,i) => `
         <div style="background:#7C5CFF20; padding:8px 16px; border-radius:8px; text-align:center; opacity:${1-i*0.1}">${s}</div>`).join('');
 
-      // Build the entire dashboard
-      content.innerHTML = `
+      // Build the dashboard
+      container.innerHTML = `
         ${kpiHtml}
         <div class="main-grid">
           <div class="card">
             <div class="card-header">
               <h3>Tasks Overview</h3>
               <div class="tabs" id="taskTabs">
-                ${taskTabs.map(t => `<span class="tab${t===taskTab?' active':''}" data-tab="${t}">${t}</span>`).join('')}
+                ${taskTabs.map(t => `<span class="tab${t==='All'?' active':''}" data-tab="${t}">${t}</span>`).join('')}
               </div>
             </div>
             <table id="taskTable"><tr><th>Task</th><th>Agent</th><th>Status</th><th>Last Update</th></tr>${taskRows}</table>
@@ -450,7 +452,7 @@
           document.querySelectorAll('#taskTabs .tab').forEach(t => t.classList.remove('active'));
           tab.classList.add('active');
           const filter = tab.dataset.tab;
-          // filter logic could be implemented here
+          // filter logic can be added later
         });
       });
 
@@ -513,7 +515,7 @@
       });
     }
 
-    // Initial load
+    // Initial load and refresh
     loadDashboardData();
     setInterval(loadDashboardData, 60000);
   </script>
