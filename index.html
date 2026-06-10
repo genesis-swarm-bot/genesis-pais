@@ -3,426 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Genesis AI · Operations Center</title>
+  <title>Genesis AI | Earnings</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0B0D12; color: #E2E8F0; display: flex; min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background: #0B0D12; color: #E2E8F0;
+      padding: 40px; margin: 0;
     }
-    /* ---------- SIDEBAR ---------- */
-    .sidebar {
-      width: 280px; background: #141821; padding: 24px 20px;
-      display: flex; flex-direction: column; border-right: 1px solid #1F2533;
-      flex-shrink: 0; position: relative; z-index: 10;
-    }
-    .logo { font-size: 22px; font-weight: 700; color: #7C5CFF; margin-bottom: 36px; }
-    .nav-item {
-      padding: 10px 16px; border-radius: 12px; color: #94A3B8;
-      font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 12px;
-      cursor: pointer; transition: all 0.2s; user-select: none;
-    }
-    .nav-item i { font-style: normal; font-size: 18px; }
-    .nav-item.active { background: #1F2533; color: #7C5CFF; }
-    .nav-item:hover { background: #1A1F2E; color: #E2E8F0; }
-    .quick-actions { border-top: 1px solid #1F2533; padding-top: 20px; display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
-    .btn {
-      background: #1F2533; color: #E2E8F0; border: none; border-radius: 12px;
-      padding: 10px 16px; font-size: 13px; font-weight: 500; text-align: left;
-      cursor: pointer; transition: all 0.2s; font-family: inherit;
-    }
-    .btn.primary { background: #7C5CFF; color: white; }
-    .btn:hover { filter: brightness(1.2); }
-    /* ---------- MAIN ---------- */
-    .main { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-    .header {
-      background: #141821; padding: 20px 32px; display: flex;
-      justify-content: space-between; align-items: center;
-      border-bottom: 1px solid #1F2533; flex-wrap: wrap; gap: 16px;
-    }
-    .welcome h1 { font-size: 24px; font-weight: 600; }
-    .welcome p { color: #94A3B8; font-size: 14px; }
-    .header-actions { display: flex; gap: 12px; align-items: center; }
-    .badge { background: #1F2533; padding: 8px 16px; border-radius: 10px; font-size: 13px; }
-    .content { padding: 32px; display: flex; flex-direction: column; gap: 32px; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
-    .kpi-card {
-      background: #141821; border-radius: 18px; padding: 20px;
-      display: flex; flex-direction: column; gap: 8px;
-    }
-    .kpi-card .icon {
-      width: 40px; height: 40px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; font-size: 20px;
-    }
-    .kpi-card .value { font-size: 28px; font-weight: 700; }
-    .kpi-card .label { font-size: 13px; color: #94A3B8; }
-    .kpi-card .trend { font-size: 12px; color: #22C55E; }
-    .main-grid { display: grid; grid-template-columns: 1fr 400px; gap: 24px; }
+    h1 { color: #7C5CFF; margin-bottom: 30px; }
     .card {
-      background: #141821; border-radius: 18px; padding: 24px;
+      background: #141821; border-radius: 18px; padding: 20px;
+      margin-bottom: 16px;
     }
-    .card-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px;
-    }
-    .card-header h3 { font-size: 18px; font-weight: 600; }
-    .tabs { display: flex; gap: 12px; }
-    .tab { color: #94A3B8; font-size: 13px; cursor: pointer; }
-    .tab.active { color: #7C5CFF; font-weight: 600; }
-    table { width: 100%; border-collapse: collapse; }
-    th {
-      text-align: left; color: #94A3B8; font-size: 12px; font-weight: 500;
-      padding-bottom: 12px; border-bottom: 1px solid #1F2533;
-    }
-    td { padding: 12px 0; font-size: 14px; border-bottom: 1px solid #1F2533; }
-    .status {
-      display: inline-block; padding: 4px 10px; border-radius: 8px;
-      font-size: 12px; font-weight: 600;
-    }
-    .status.running { background: #1A2E1F; color: #22C55E; }
-    .status.completed { background: #1E2A3A; color: #60A5FA; }
-    .status.pending { background: #2D2A1A; color: #F59E0B; }
-    .status.failed { background: #2D1A1A; color: #EF4444; }
-    .agent-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 0; border-bottom: 1px solid #1F2533;
-    }
-    .agent-item .name { flex: 1; font-weight: 500; }
-    .health-bar {
-      width: 80px; height: 6px; background: #1F2533; border-radius: 3px; overflow: hidden;
-    }
-    .health-bar-fill { height: 100%; background: #22C55E; border-radius: 3px; }
-    .activity-item {
-      display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1F2533; font-size: 13px;
-    }
-    .activity-item .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #7C5CFF; margin-top: 6px; flex-shrink: 0;
-    }
-    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
-    .command-center {
-      position: fixed; bottom: 24px; right: 24px;
-      background: #141821; border: 1px solid #7C5CFF; border-radius: 18px;
-      padding: 16px; display: flex; flex-direction: column; gap: 10px;
-      box-shadow: 0 0 20px rgba(124,92,255,0.15); z-index: 100;
-    }
-    .command-center .btn { font-size: 12px; padding: 8px 14px; }
-    /* Modals */
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7); display: none; justify-content: center;
-      align-items: center; z-index: 200;
-    }
-    .modal {
-      background: #141821; border: 1px solid #1F2533; border-radius: 18px;
-      padding: 32px; width: 500px; max-width: 90%;
-    }
-    .modal h2 { margin-bottom: 24px; font-size: 20px; }
-    .modal input, .modal select, .modal textarea {
-      width: 100%; padding: 12px; background: #0B0D12; border: 1px solid #1F2533;
-      border-radius: 10px; color: #E2E8F0; margin-bottom: 16px; font-family: inherit;
-    }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 12px; }
-    @media (max-width: 1400px) {
-      .kpi-grid { grid-template-columns: repeat(3, 1fr); }
-      .main-grid { grid-template-columns: 1fr; }
-      .sidebar { width: 240px; }
-    }
+    .event { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1F2533; }
+    .event:last-child { border-bottom: none; }
+    .source { font-weight: 600; color: #7C5CFF; }
+    .title { flex: 1; margin-left: 20px; }
+    .time { color: #94A3B8; font-size: 14px; }
+    .error { color: #EF4444; padding: 20px; }
   </style>
 </head>
 <body>
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="logo">SYSTEM AI</div>
-    <nav class="nav-section">
-      <div class="nav-item active" data-page="dashboard"><i>📊</i> Dashboard</div>
-      <div class="nav-item" data-page="tasks"><i>📋</i> Tasks</div>
-      <div class="nav-item" data-page="agents"><i>🤖</i> AI Agents</div>
-      <div class="nav-item" data-page="workflows"><i>⚙️</i> Workflows</div>
-      <div class="nav-item" data-page="projects"><i>📁</i> Projects</div>
-      <div class="nav-item" data-page="knowledge"><i>🧠</i> Knowledge</div>
-      <div class="nav-item" data-page="analytics"><i>📈</i> Analytics</div>
-      <div class="nav-item" data-page="integrations"><i>🔗</i> Integrations</div>
-      <div class="nav-item" data-page="settings"><i>⚙️</i> Settings</div>
-    </nav>
-    <div class="quick-actions">
-      <button class="btn" id="newWorkflowBtn">+ New Workflow</button>
-      <button class="btn" id="createAgentBtn">+ Create Agent</button>
-      <button class="btn" id="newTaskBtn">+ Create Task</button>
-      <button class="btn" id="viewReportsBtn">📋 View Reports</button>
-    </div>
-  </aside>
-
-  <!-- MAIN -->
-  <div class="main">
-    <header class="header">
-      <div class="welcome">
-        <h1 id="greeting">Good Morning, Badre</h1>
-        <p>Your AI ecosystem is operating normally.</p>
-      </div>
-      <div class="header-actions">
-        <div class="badge">Production</div>
-        <button class="btn" id="filtersBtn">Filters</button>
-        <button class="btn primary" id="newTaskHeaderBtn">+ New Task</button>
-      </div>
-    </header>
-
-    <div class="content" id="pageContent">
-      <!-- Dashboard rendered here after data loads -->
-    </div>
-  </div>
-
-  <!-- COMMAND CENTER -->
-  <div class="command-center">
-    <button class="btn" id="pauseAgentsBtn">⏸️ Pause All Agents</button>
-    <button class="btn" id="restartSystemBtn">🔄 Restart System</button>
-    <button class="btn" id="emergencyStopBtn">🛑 Emergency Stop</button>
-    <button class="btn primary" id="deployWorkflowBtn">🚀 Deploy New Workflow</button>
-  </div>
-
-  <!-- MODALS (same as before, omitted for brevity but must be included) -->
-  <!-- ... include all modal HTML from previous complete version ... -->
+  <h1>Genesis AI – Earnings Log</h1>
+  <div id="app">Loading...</div>
 
   <script>
-    // ---------- SUPABASE ----------
     const sb = supabase.createClient(
       "https://jbrcxkrudgwhmqxqtjen.supabase.co",
       "sb_publishable_LP9aT6_4n7Q3GN_tIXb1vQ_YyV3H1tI"
     );
 
-    // ---------- GLOBAL STATE ----------
-    let currentPage = 'dashboard';
-    let allEvents = [];
+    async function load() {
+      const app = document.getElementById('app');
+      try {
+        const { data, error } = await sb.from('earnings').select('*').order('timestamp', { ascending: false }).limit(20);
+        if (error) throw error;
 
-    // ---------- GREETING ----------
-    function updateGreeting() {
-      const hour = new Date().getHours();
-      const greet = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
-      document.getElementById('greeting').textContent = `${greet}, Badre`;
-    }
-    updateGreeting();
-
-    // ---------- NAVIGATION ----------
-    function navigateTo(page) {
-      currentPage = page;
-      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-      const activeNav = document.querySelector(`[data-page="${page}"]`);
-      if (activeNav) activeNav.classList.add('active');
-      renderPage(); // Immediately show loading/placeholder for new page
-    }
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', () => navigateTo(item.dataset.page));
-    });
-
-    // ---------- MODAL HELPERS ----------
-    function showModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    // ... all modal event listeners (same as before) ...
-
-    // ---------- DATA FETCHING ----------
-    async function loadDashboardData() {
-      const { data, error } = await sb.from('earnings').select('*').order('timestamp', { ascending: false });
-      if (!error) allEvents = data;
-      renderPage(); // Re-render the current page with fresh data
-    }
-
-    // ---------- RENDER PAGE ----------
-    function renderPage() {
-      const content = document.getElementById('pageContent');
-      if (currentPage === 'dashboard') {
-        // Show loading if no data yet, else full dashboard
-        if (allEvents.length === 0 && currentPage === 'dashboard') {
-          content.innerHTML = `<div class="card" style="text-align:center; padding:80px;"><h2>Loading dashboard...</h2></div>`;
+        if (data.length === 0) {
+          app.innerHTML = '<div class="card">No earnings recorded yet. The swarm will populate this after its first actions.</div>';
           return;
         }
-        renderDashboard(content);
-      } else {
-        content.innerHTML = `<div class="card" style="text-align:center; padding:80px;">
-          <h2>${currentPage.charAt(0).toUpperCase()+currentPage.slice(1)}</h2>
-          <p style="color:#94A3B8">This section will be available soon.</p>
-        </div>`;
-      }
-    }
 
-    // ---------- DASHBOARD RENDERING (identical to previous) ----------
-    function renderDashboard(container) {
-      const events = allEvents || [];
-      const sources = [...new Set(events.map(e => e.source))];
-      const total = events.length;
-      const completedToday = events.filter(e => {
-        const d = new Date(e.timestamp);
-        const today = new Date();
-        return d.toDateString() === today.toDateString();
-      }).length;
-
-      // KPI cards
-      const kpiHtml = `
-        <div class="kpi-grid">
-          <div class="kpi-card"><div class="icon" style="background:#7C5CFF20;color:#7C5CFF;">🤖</div><div class="value">${sources.length}</div><div class="label">Active Agents</div><div class="trend">+2</div></div>
-          <div class="kpi-card"><div class="icon" style="background:#F59E0B20;color:#F59E0B;">⚡</div><div class="value">${total}</div><div class="label">Running Tasks</div><div class="trend">+5</div></div>
-          <div class="kpi-card"><div class="icon" style="background:#22C55E20;color:#22C55E;">✅</div><div class="value">${completedToday}</div><div class="label">Completed Today</div><div class="trend">+12</div></div>
-          <div class="kpi-card"><div class="icon" style="background:#22C55E20;color:#22C55E;">💚</div><div class="value">98%</div><div class="label">Workflow Health</div><div class="trend">Normal</div></div>
-          <div class="kpi-card"><div class="icon" style="background:#60A5FA20;color:#60A5FA;">📁</div><div class="value">${sources.length}</div><div class="label">Active Projects</div><div class="trend">All systems go</div></div>
-          <div class="kpi-card"><div class="icon" style="background:#7C5CFF20;color:#7C5CFF;">🧠</div><div class="value">${sources.length}</div><div class="label">Knowledge Sources</div><div class="trend">Connected</div></div>
-        </div>`;
-
-      // Tasks table with tabs
-      const taskTabs = ['All', 'Running', 'Completed', 'Pending', 'Failed'];
-      const taskRows = events.slice(0, 8).map(e => {
-        let status = 'completed';
-        if (e.source.includes('steemit') || e.source.includes('hive')) status = 'running';
-        return `<tr>
-          <td>${e.title || 'Automated task'}</td>
-          <td>${e.source}</td>
-          <td><span class="status ${status}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td>
-          <td>${new Date(e.timestamp).toLocaleString()}</td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="4">No tasks recorded yet. The swarm will populate this after its first actions.</td></tr>';
-
-      // Agents
-      const agents = [
-        { name: "Research Agent", status: "online", health: 95 },
-        { name: "Content Agent", status: "online", health: 88 },
-        { name: "Sales Agent", status: "online", health: 73 },
-        { name: "Support Agent", status: "online", health: 99 },
-        { name: "Analytics Agent", status: "online", health: 100 },
-        { name: "Strategy Agent", status: "online", health: 91 },
-      ];
-      const agentHtml = agents.map(a => `
-        <div class="agent-item">
-          <span>🤖</span><span class="name">${a.name}</span>
-          <span style="color:#22C55E;font-size:12px;">${a.status}</span>
-          <div class="health-bar"><div class="health-bar-fill" style="width:${a.health}%"></div></div>
-        </div>`).join('');
-
-      // Activity feed
-      const activityHtml = events.slice(0, 5).map(e => `
-        <div class="activity-item">
-          <div class="dot"></div>
-          <div><strong>${e.source}</strong> – ${e.title || 'Task'}<br><small>${new Date(e.timestamp).toLocaleString()}</small></div>
-        </div>`).join('') || '<div class="activity-item"><div class="dot"></div>Waiting for agents to perform actions...</div>';
-
-      // Bottom cards
-      const insightsHtml = `
-        <p style="margin-bottom:12px;">💡 <strong>Opportunity Detected</strong><br>New workflow optimization available.</p>
-        <p style="margin-bottom:12px;">📈 <strong>Performance Increase</strong><br>Task completion speed improved.</p>
-        <p style="color:#F59E0B;">⚠️ <strong>Warning</strong><br>One workflow experiencing delays.</p>`;
-
-      const funnelStages = ["Input", "Research", "Analysis", "Decision", "Execution", "Reporting"];
-      const funnelHtml = funnelStages.map((s,i) => `
-        <div style="background:#7C5CFF20; padding:8px 16px; border-radius:8px; text-align:center; opacity:${1-i*0.1}">${s}</div>`).join('');
-
-      // Build the dashboard
-      container.innerHTML = `
-        ${kpiHtml}
-        <div class="main-grid">
-          <div class="card">
-            <div class="card-header">
-              <h3>Tasks Overview</h3>
-              <div class="tabs" id="taskTabs">
-                ${taskTabs.map(t => `<span class="tab${t==='All'?' active':''}" data-tab="${t}">${t}</span>`).join('')}
-              </div>
+        let html = '<div class="card">';
+        data.forEach(e => {
+          html += `
+            <div class="event">
+              <span class="source">${e.source}</span>
+              <span class="title">${e.title || 'Untitled'}</span>
+              <span class="time">${new Date(e.timestamp).toLocaleString()}</span>
             </div>
-            <table id="taskTable"><tr><th>Task</th><th>Agent</th><th>Status</th><th>Last Update</th></tr>${taskRows}</table>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:24px;">
-            <div class="card">
-              <div class="card-header"><h3>System Performance</h3></div>
-              <canvas id="performanceChart" height="200"></canvas>
-            </div>
-            <div class="card">
-              <div class="card-header"><h3>AI Agent Status</h3></div>
-              <div id="agentList">${agentHtml}</div>
-            </div>
-            <div class="card">
-              <div class="card-header"><h3>Recent Activity</h3></div>
-              <div id="activityFeed">${activityHtml}</div>
-            </div>
-          </div>
-        </div>
-        <div class="bottom-grid">
-          <div class="card"><div class="card-header"><h3>Insights</h3></div>${insightsHtml}</div>
-          <div class="card"><div class="card-header"><h3>Workflow Funnel</h3></div><div id="funnel" style="display:flex;flex-direction:column;gap:8px;">${funnelHtml}</div></div>
-          <div class="card"><div class="card-header"><h3>Agent Distribution</h3></div><canvas id="distributionChart" height="200"></canvas></div>
-        </div>
-      `;
-
-      // Re-attach tab events
-      document.querySelectorAll('#taskTabs .tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('#taskTabs .tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          // filter logic can be added here
+          `;
         });
-      });
-
-      // Render charts
-      renderPerformanceChart(events);
-      renderDistributionChart(events);
-    }
-
-    // ---------- CHARTS (same as before) ----------
-    function renderPerformanceChart(events) {
-      const ctx = document.getElementById('performanceChart')?.getContext('2d');
-      if (!ctx) return;
-      const days = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        days.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+        html += '</div>';
+        app.innerHTML = html;
+      } catch (err) {
+        app.innerHTML = `<div class="error">Error loading data: ${err.message}<br>Check browser console for details.</div>`;
+        console.error(err);
       }
-      const counts = days.map(d => events.filter(e => new Date(e.timestamp).toLocaleDateString() === d).length);
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: days,
-          datasets: [{
-            label: 'Actions', data: counts,
-            borderColor: '#7C5CFF', backgroundColor: 'rgba(124,92,255,0.1)',
-            fill: true, tension: 0.4, pointRadius: 4,
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, grid: { color: '#1F2533' }, ticks: { color: '#94A3B8' } },
-            x: { grid: { display: false }, ticks: { color: '#94A3B8' } }
-          }
-        }
-      });
     }
 
-    function renderDistributionChart(events) {
-      const ctx = document.getElementById('distributionChart')?.getContext('2d');
-      if (!ctx) return;
-      const sources = {};
-      events.forEach(e => { sources[e.source] = (sources[e.source] || 0) + 1; });
-      const labels = Object.keys(sources);
-      const data = Object.values(sources);
-      if (labels.length === 0) { labels.push('No data'); data.push(1); }
-      new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels, datasets: [{
-            data, backgroundColor: ['#7C5CFF','#22C55E','#F59E0B','#EF4444','#60A5FA','#94A3B8'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { color: '#E2E8F0', font: { size: 12 } } } }
-        }
-      });
-    }
-
-    // Initial load
-    renderPage(); // show loading message on dashboard
-    loadDashboardData();
-    setInterval(loadDashboardData, 60000);
+    load();
+    setInterval(load, 60000);
   </script>
 </body>
 </html>
